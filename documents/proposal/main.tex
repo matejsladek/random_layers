@@ -1,27 +1,58 @@
 \documentclass[]{article}
 
-\usepackage{geometry}
+\usepackage[a4paper, margin=2cm, showframe]{geometry}
+\usepackage{multicol}
+% TODO: Remove import
 \usepackage{blindtext}
 
 %opening
 \title{Deep Learning Fall 2019 Project Proposal\\\large{Large, Random Non-trainable Layers in Neural Networks with Memory Constraints}}
 \author{Matej Sladek \& Bram van den Heuvel}
 
+\pagestyle{empty}
+
 \begin{document}
 \maketitle
 
-\section{Introduction}
-Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they don't suffer from the downsides of that fact the same way that virtual all other model classes do.
-
-In the early 1990's, a paper by Schmidt et. al. attempts to explain this phenomena by showing that many of the parameters in a deep model are of less importance. They describe how the first layers of a neural net can be viewed as a collection of nonlinear features of the input data, with a simple linear regression attached to it in the final layer. The weights in the final layer are of higher importance. They demonstrate this by randomly initializing some of the hidden layers with random weights, and then keep their values fixed throughout the training procedure. Fixing these values reduced performance only slightly in their experiments.
-
-
-\section{Depth and Memory limitations in state-of-the-art models}
-The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million.
-
-This translates to a maximum memory usage of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that. This means that with a batch size of 64, none of the top performing models can be trained on a consumer-grade GPU.
-
-\section{Proposal}
-We hope to improve on the memory usage / training time / performance trade-off in neural network models by replacing existing layers or introducing new layers that are large, random and non-trainable and who's weights are regenerated from the same seed at each pass in a parallel manner, analogous to pseudo-random functions in cryptography. This will provide depth while not increasing the memory usage; activations are recomputed at each pass within the core, as to not saturate the floating point datapath and as such minimizing the activation recomputation time penalty.
+\begin{multicols}{2}
+	\section{Introduction}
+	Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they don't suffer from the downsides of that fact the same way that virtual all other model classes do.
+	
+	In the early 1990's, a paper by Schmidt et. al. attempts to explain this phenomena by showing that many of the parameters in a deep model are of less importance. They describe how the first layers of a neural net can be viewed as a collection of nonlinear features of the input data, with a simple linear regression attached to it in the final layer. The weights in the final layer are of higher importance. They demonstrate this by randomly initializing some of the hidden layers with random weights, and then keep their values fixed throughout the training procedure. Fixing these values reduced performance only slightly in their experiments.
+	
+	
+	\section{Depth and Memory limitations in state-of-the-art models}
+	The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million.
+	
+	This translates to a maximum memory usage of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that. This means that with a batch size of 64, none of the top performing models can be trained on a consumer-grade GPU.
+	
+	\section{Idea}
+	We hope to improve on the memory usage / training time / performance trade-off in neural network models by replacing existing layers or introducing new layers that are large, random and non-trainable and who's weights are regenerated from the same seed at each pass in a parallel manner, analogous to pseudo-random functions in cryptography. This will provide depth while not increasing the memory usage; activations are recomputed at each pass within the core, as to not saturate the floating point datapath and as such minimizing the activation recomputation time penalty. We call these layers \emph{random layers}.
+	
+	\section{Methods}
+	We study the effect of introducing new random layers, or replacing existing layers by random layers. We don't have the means to provide an implementation of our idea. While model performance can still be measured exactly by simply storing the random layers completely, we will from time to time have to estimate e.g. the memory usage, or describe based on other literature, what the likely effects on runtime are be.
+	
+	\subsection{Performance}
+	We identified the following tasks:
+	\begin{itemize}
+		\item Convolutional architecture to classify images from the MNIST dataset
+		\item Dense architecture to classify on the higgs dataset
+		\item Dense architecture to do regression on non-image data % TODO: Add dataset, perhaps hospital?
+	\end{itemize}
+	The models we identified are as follows:
+	\begin{itemize}
+		\item A small model, slightly too simple to perform well
+		\item A large model, performing well
+	\end{itemize}
+	For each task-model combination we will evaluate a baseline model, the baseline with a layer replaced, and the baseline with a layer added.
+	
+	If we find improvement, we will report more imprecisely which layer sizes and how many after one another worked best for our problems in our experience.
+	
+	\subsection{Memory usage}
+	We will attempt to measure or approximate through calculation the maximum memory usage throughout the training for the base models. When adding random layers, we will approximate the memory usage
+	
+	\subsection{Training time}
+	We will describe through which methods the training time can be optimized, and if feasible, will estimate how the training time would be impacted by applying random layers.
+\end{multicols}
 
 \end{document}
