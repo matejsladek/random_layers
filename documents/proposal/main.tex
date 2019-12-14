@@ -46,11 +46,9 @@
 		\item A small model, slightly too simple to perform well
 		\item A large model, performing well
 	\end{itemize}
-	For each task-model combination we will evaluate a baseline model, the baseline with a layer replaced, and the baseline with a layer added.
+	For each task-model combination we will evaluate a baseline model, the baseline with a layer replaced by a random layer, and the baseline with a random layer added.
 	
-	If we find improvement, we will report how many layers, and of which size, works best for the selected tasks.
-	
-	If time permits, we will attempt to improve one of the INLSVRC models.
+	If we find improvement, we will report how many layers, and of which size, works best for the selected tasks. If time permits, we will attempt to improve one of the INLSVRC models.
 	
 	\subsection{Memory usage}
 	We will attempt to measure or approximate by calculation the maximum memory usage throughout the training for the baseline models, and then calculate the memory usage of the other variants relative to that of the baseline model.
