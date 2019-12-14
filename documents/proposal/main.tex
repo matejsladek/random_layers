@@ -9,7 +9,7 @@
 
 %opening
 \title{\vspace{-2cm}Deep Learning Fall 2019 Project Proposal\\\large{Large, Random Non-trainable Layers in Neural Networks with Memory Constraints}}
-\author{Matej Sladek \& Bram van den Heuvel}
+\author{Bram van den Heuvel \& Matej Sladek}
 
 \pagestyle{empty}
 
@@ -18,7 +18,7 @@
 
 \begin{multicols}{2}
 	\section{Introduction}
-	Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they don't suffer from the downsides of that fact the same way that virtually all other model classes do.
+	Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they do not suffer from the downsides of that fact the same way that virtually all other model classes do.
 	
 	In the early 1990's, Schmidt et. al. \cite{Schmidt_Kraaijveld_Duin} attempted to explain this phenomena by showing that many of the parameters in a deep model are of less importance. They describe how the first layers of a neural net can be viewed as a collection of nonlinear features of the input data, with a simple linear regression attached to it in the final layer. The weights in the final layer are of higher importance. They demonstrate this by randomly initializing some of the hidden layers with random weights and keeping their values fixed throughout the training procedure. We call these layers \emph{random layers}. The training procedure still works surprisingly well.
 	
@@ -30,7 +30,7 @@
 	We attempt to show improvement in the performance, memory usage and training time trade-off in deep neural networks. By replacing existing layers or introducing new layers, that are potentially very wide, random and non-trainable, we achieve depth. We think to have found a way to do so without incurring noticable memory usage by applying a "trick" inspired by pseudo-random functions \cite{Goldreich_Goldwasser_Micali_1986}. Activations would need to be recomputed at each pass, but due to the specifics of our trick, we expect it to be cheaper than in, for example, \cite{DBLP:journals/corr/GruslysMDLG16} as memory bandwidth can be a bottleneck \cite{Li_Shen_Dou_Ni_Xu_Yang_Wang_Niu_2019}.
 	
 	\section{Methods}
-	We study the effect of introducing new random layers, or replacing existing layers by random layers on performance and memory usage. We don't have the means to provide an implementation of our idea. We will be able to measure model performance exactly by simply storing the random layers completely. Memory usage will have to be estimated, and the effects on training time we can most likely only analyze qualitatively.
+	We study the effect of introducing new random layers, or replacing existing layers by random layers. We do not have the means to provide an implementation of our idea. We will be able to measure model performance exactly by simply storing the random layers completely. Memory usage will have to be estimated, and the effects on training time we can only analyze qualitatively.
 	
 	\subsection{Performance}
 	To measure the effect of random layers on performance we identified the following tasks:
