@@ -12,6 +12,7 @@ def plot_marginals(data, dimension_meaning, values, dimension_of_interest):
     dimension_swap.insert(0, dimension_of_interest)
     data = np.transpose(data, dimension_swap)
     values = np.array(values)[dimension_swap[:-1]]
+    dimension_meaning = np.array(dimension_meaning)[dimension_swap[:-1]]
 
     total_observations = prod(data.shape)
 
@@ -39,8 +40,8 @@ def plot_marginals(data, dimension_meaning, values, dimension_of_interest):
                     s=dot_size,
                 )
 
-        plt.title("Varying over " + dimension_meaning[-1 + i].lower())
+        plt.title("Varying over " + dimension_meaning[i].lower())
         plt.xticks(range(data.shape[0]), values[0])
-        plt.legend([str(value) for value in values[i]])
+        plt.legend([str(value) for value in values[i][:i + 1]])
         plt.xlim(-.5, len(values[0]) - .5)
         plt.show()
