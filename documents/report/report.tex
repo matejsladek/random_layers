@@ -60,21 +60,42 @@
 	For the training we use Adam optimizer and early stopping callback to stop learning after evaluation loss does not change much.
 	
 	\section{Results}
-	On MNIST dataset we data to training and test data set in ratio 8:1. We train every architecture one time. The loss function is sparse categorical crossentropy (higher is better). Best dense configuration had performance 0.89\%, best convolution configuration had 0.91\% and with added random layers best performance was 89\%. In (Fig 1) can be seen plot with data point for every configuration. On plot we see means of every type of architecture. After adding random layers the performance dropped.
+	On MNIST dataset we data to training and test data set in ratio 8:1. We train every architecture one time. The loss function is sparse categorical crossentropy (higher is better). Best dense configuration had performance 0.89\%, best convolution configuration had 0.91\% and with added random layers best performance was 89\%. In \ref{fig:result1} can be seen plot with data point for every configuration. On plot we see means of every type of architecture. After adding random layers the performance dropped.
 	
-	On Census income we use K-fold evaluation and we split data to 10 parts and every architecture configuration train for 10 times. In regression task loss is mean squared error(lower is better). In (Fig 2) we can see that mean of results is similar even if we add 1 or 2 random layer. We also go deeper with random layers with using residual random layers. We evaluate architectures with 10, 20, 30 and 40 residual random layers. Results are in (Fig 3) and there are not much difference when we add more random layers.
+	On Census income we use K-fold evaluation and we split data to 10 parts and every architecture configuration train for 10 times. In regression task loss is mean squared error(lower is better). In \ref{fig:result2} we can see that mean of results is similar even if we add 1 or 2 random layer. We also go deeper with random layers with using residual random layers. We evaluate architectures with 10, 20, 30 and 40 residual random layers. Results are in \ref{fig:result3} and there are not much difference when we add more random layers.
 	
-	On Census income on classification task we take same models as in regression. We use sparse categorical crossentropy loss. Results are in (Fig 4). Best models have similar results even after adding random layer, but we can see mean is smaller for architectures without random layer and that is because few models has low performance, so we can see that stability of training went up after adding random layer.	
-	
-	\section{Discussion}
-	From results we can say that adding few random layers does not improve performance. Mean performance of models went a little bit down after adding these layers. Same happen when we add lots of residual random layer. In classification task of census income models without any random layer happened have lower performance in some cases, but after adding random layer we have not see it. From that we conclude that in some cases random layers can improve stability of training.
+	On Census income on classification task we take same models as in regression. We use sparse categorical crossentropy loss. Results are in \ref{fig:result4}. Best models have similar results even after adding random layer, but we can see mean is smaller for architectures without random layer and that is because few models has low performance, so we can see that stability of training went up after adding random layer.	
 	
 	\begin{Figure}
 		\centering
-		\includegraphics[width=\linewidth]{index.png}
-		\captionof{figure}{Abc}
-		\label{fig:result}
+		\includegraphics[width=\linewidth]{figure1.png}
+		\captionof{figure}{MNIST}
+		\label{fig:result1}
 	\end{Figure}
+
+	\begin{Figure}
+		\centering
+		\includegraphics[width=\linewidth]{figure2.png}
+		\captionof{figure}{Census income regression}
+		\label{fig:result2}
+	\end{Figure}
+	
+	\begin{Figure}
+		\centering
+		\includegraphics[width=\linewidth]{figure3.png}
+		\captionof{figure}{Census income regression residual layers}
+		\label{fig:result3}
+	\end{Figure}
+	
+	\begin{Figure}
+		\centering
+		\includegraphics[width=\linewidth]{figure4.png}
+		\captionof{figure}{Census income classification}
+		\label{fig:result4}
+	\end{Figure}
+	
+	\section{Discussion}
+	From results we can say that adding few random layers does not improve performance. Mean performance of models went a little bit down after adding these layers. Same happen when we add lots of residual random layer. In classification task of census income models without any random layer happened have lower performance in some cases, but after adding random layer we have not see it. From that we conclude that in some cases random layers can improve stability of training.
 	
 	\section{Summary}
 	In conclusion we proposed idea to memory limited implementation of random layers. We evaluated models with or without random layers on regression and classification tasks. We conclude that adding random layers does not change performance a much. In evaluation of classification task of census income dataset, we have seen that training stability was improved.
@@ -82,7 +103,5 @@
 	\bibliography{../bibliography}
 	\bibliographystyle{plain}
 \end{multicols}
-
-I refer to the image \ref{fig:result}.
 
 \end{document}
