@@ -1,5 +1,9 @@
 import numpy as np
-from math import prod
+import operator
+from functools import reduce
+def prod(iterable):
+    return reduce(operator.mul, iterable, 1)
+# from math import prod
 from matplotlib import pyplot as plt
 
 
@@ -40,7 +44,7 @@ def plot_marginals(data, dimension_meaning, values, dimension_of_interest):
                     s=dot_size,
                 )
 
-        plt.title("Varying over " + dimension_meaning[i].lower())
+        plt.title("Varying over " + dimension_meaning[i].lower(), fontsize=22)
         plt.xticks(range(data.shape[0]), values[0])
         plt.legend([str(value) for value in values[i][:i + 1]])
         plt.xlim(-.5, len(values[0]) - .5)
