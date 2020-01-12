@@ -11,6 +11,8 @@
 {\par\medskip\noindent\minipage{\linewidth}}
 {\endminipage\par\medskip}
 
+\usepackage{dsfont}
+
 \title{Deep Learning Fall 2019 Project Report\\\large{Large, Random Non-trainable Layers in Neural Networks with Memory Constraints}}
 \author{Bram van den Heuvel \& Matej Sladek}
 
@@ -21,7 +23,7 @@
 \maketitle
 
 \begin{abstract}
-	In this project we present approach to implement non-trainable layers in regards of memory usage and we evaluate effect on performance and training stability after adding random layers to different architectures. The performance was not improved after adding random layers and training stability was improved in one classification task.
+	We realize that an arbitrary number of non-trainable weights can be represented by a (single) seed. We propose a memory saving technique for non-trainable parameters that recomputes weights during training and evaluation in a way that incurs a "lower than na\"ively expected" runtime costs. We then attempt to utilize large numbers of non-trainable weights in various architectures and report on the model performance. Our experiments generally showed that performance doesn't improve when adding more non-trainable weights to an architecture while training stability was improved in one classification task.
 \end{abstract}
 
 
@@ -29,17 +31,25 @@
 	\section{Introduction}
 	Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they do not suffer from the downsides of that fact the same way that virtually all other model classes do.
 	
+	\subsection{Not all parameters are equal}
 	In the early 1990's, Schmidt et. al. \cite{Schmidt_Kraaijveld_Duin} attempted to explain this phenomena by showing that many of the parameters in a deep model are of less importance. They describe how the first layers of a neural net can be viewed as a collection of nonlinear features of the input data, with a simple linear regression attached to it in the final layer. The weights in the final layer are of higher importance. They demonstrate this by randomly initializing some of the hidden layers with random weights and keeping their values fixed throughout the training procedure. We call these layers \emph{random layers}. The training procedure still works surprisingly well.
 	
-	The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge (INLSVRC) \cite{DBLP:journals/corr/CanzianiPC16}. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million. This translates to a maximum memory usage during training of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that. This means that with a batch size of 64, none of the top performing models can be trained on a mobile device or a consumer-grade GPU because of memory limitations.
+	\subsection{Performance, depth and memory}\label{performance_depth_memory}
+	The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge (INLSVRC) \cite{DBLP:journals/corr/CanzianiPC16}. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million. This translates to a maximum memory usage during training of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that \cite{DBLP:journals/corr/CanzianiPC16}. This means that with a batch size of 64, none of the top performing models can be trained on a mobile device or a consumer-grade GPU because of memory limitations.
 	
-	Our contribution is inspired by the realization that all non-trainable parameters can be generated from a (single) seed, and as such impose a different memory penalty than trainable parameters. We describe this difference in terms of model storage size, memory requirements during training and evaluation, as well as training and evaluation time. We then experiment with random layers in different architectures and evaluate the performance.
+	\section{Regeneration of weights}
+	We realize that an arbitrary number of non-trainable weights can be represented by a (single) seed. A Pseudo Random Number Generator (PRNG) can generate values that are "hard to distinguish" from independent realizations of a certain distribution. They typically work sequentially, or multiple seeds are used between threads if the values should be generated in a reproducible manner.
+	
+	These methods are sufficient to save on model storage costs for large models. A more realistic problem is memory usage during training, as was made clear in section \ref{performance_depth_memory}. The memory usage typically peaks at the end of the forward pass, when the model weights and the activations are stored. Recomputation of activations during the backward pass, by only saving a subset of the computed activations and recomputing them from the last layer they are known from, has allowed for sub-linear maximum memory usage in the number of layers during training \cite{chen2016training}.
+	
+	While one typically recomputes a majority of the activations with the algorithm in \cite{chen2016training}, the runtime increase is shown to be only 30\% for a 4x reduction in maximum memory usage when training an LSTM under a long sequence unrolling setting. It is hypothesized that this can be explained in part by the under utilization of computational resources in a GPU, where memory bandwidth is more often a limiting factor\footnote{We found no scientific research on this (engineering) subject, but plenty of anecdotal evidence in blog posts such as these: \url{https://nestlogic.com/index.php/2019/02/11/gpu-utilization-with-neural-networks/} and  \url{https://towardsdatascience.com/measuring-actual-gpu-usage-for-deep-learning-training-e2bf3654bcfd}} (a simple solution would be to increase the batch size, but this directly increases the maximum memory usage, see again section \ref{performance_depth_memory}).
+	
+	All of this changes when instead, we utilize a Pseudo Random Function (PRF). These can be viewed as PRNG's which don't generate values $(v_1, v_2, \ldots)$ in sequence, but instead can evaluate in constant time a function $\mathds{N} \ni n \mapsto v_n$. They stem from cryptography and the well-known ones are made for such applications, unsuitable for training neural networks. The requirements for a random number generator are different for this application: speed and memory usage matter, while the quality of the generated numbers less. For a sketch of a first idea of a pseudo random function for this application, see the appendix. The memory requirements of such a function are low enough to evaluate it on-chip (A TitanX GPU has approximately 1KB of memory for a thread \cite{DBLP:conf/icml/DiamosSCCCEEHS16}), without any communication across cores. In this way, there is no memory access incurred for non-trainable weights, which we think will be reflected favorably in the training time of these models.
+	
+	We describe this difference in terms of model storage size, memory requirements during training and evaluation, as well as training and evaluation time. We then experiment with random layers in different architectures and evaluate the performance.
 	
 	\section{Models and Methods}
 	We study the effect of introducing new random layers, or replacing existing layers by random layers. We propose idea to store weights of random layer in memory effective way. We do not have the means to provide an implementation of our idea. We measure model performance exactly by simply storing the random layers completely.
-	
-	\subsection{Idea}
-	Idea description
 	
 	
 	\subsection{Performance}
@@ -100,6 +110,18 @@
 	\section{Summary}
 	In conclusion we proposed idea to memory limited implementation of random layers. We evaluated models with or without random layers on regression and classification tasks. We conclude that adding random layers does not change performance a much. In evaluation of classification task of census income dataset, we have seen that training stability was improved.
 	
+	\section{Appendix}
+	\subsection{A possible pseudo random function}
+	We choose a simple hash function $h$, to be evaluated on a tuple of
+	\begin{enumerate}
+		\itemsep0em
+		\item a unique identifier for layer and
+		\item the coordinates of the parameter.
+	\end{enumerate}
+	The resulting bits are then interpreted as a float in $[0, 1]$ to be used as input of the inverse of a cumulative distribution function.
+
+	It goes without saying that we are no experts on such functions; the above is merely a first idea from non-experts.
+
 	\bibliography{../bibliography}
 	\bibliographystyle{plain}
 \end{multicols}
