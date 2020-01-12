@@ -51,7 +51,6 @@
 	\section{Models and Methods}
 	We study the effect of introducing new random layers, or replacing existing layers by random layers. We propose idea to store weights of random layer in memory effective way. We do not have the means to provide an implementation of our idea. We measure model performance exactly by simply storing the random layers completely.
 	
-	
 	\subsection{Performance}
 	To measure the effect of random layers on performance we identified the following tasks:
 	\begin{itemize}
@@ -110,6 +109,7 @@
 	\section{Summary}
 	In conclusion we proposed idea to memory limited implementation of random layers. We evaluated models with or without random layers on regression and classification tasks. We conclude that adding random layers does not change performance a much. In evaluation of classification task of census income dataset, we have seen that training stability was improved.
 	
+	\appendix
 	\section{Appendix}
 	\subsection{A possible pseudo random function}
 	We choose a simple hash function $h$, to be evaluated on a tuple of
