@@ -1,5 +1,5 @@
 \documentclass[]{article}
-\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[a4paper]{geometry}
 \usepackage{multicol}
 
 \usepackage{cite}
@@ -28,80 +28,95 @@
 
 
 \begin{multicols}{2}
-	\section{Introduction}
+	\section{Introduction}\label{introduction}
 	Classical statistics suggests there is a paradox going on in deep learning: the models have an enormous number of parameters, but they do not suffer from the downsides of that fact the same way that virtually all other model classes do.
 	
-	\subsection{Not all parameters are equal}
 	In the early 1990's, Schmidt et. al. \cite{Schmidt_Kraaijveld_Duin} attempted to explain this phenomena by showing that many of the parameters in a deep model are of less importance. They describe how the first layers of a neural net can be viewed as a collection of nonlinear features of the input data, with a simple linear regression attached to it in the final layer. The weights in the final layer are of higher importance. They demonstrate this by randomly initializing some of the hidden layers with random weights and keeping their values fixed throughout the training procedure. We call these layers \emph{random layers}. The training procedure still works surprisingly well.
 	
-	\subsection{Performance, depth and memory}\label{performance_depth_memory}
-	The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge (INLSVRC) \cite{DBLP:journals/corr/CanzianiPC16}. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million. This translates to a maximum memory usage during training of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that \cite{DBLP:journals/corr/CanzianiPC16}. This means that with a batch size of 64, none of the top performing models can be trained on a mobile device or a consumer-grade GPU because of memory limitations.
+	The value of depth and a large number of parameters is demonstrated by the models performing best in the ImageNet Large Scale Visual Recognition Challenge (INLSVRC) \cite{DBLP:journals/corr/CanzianiPC16}. In the last decade, the number of layers in the top-performing model has gone up to 152 with ResNet. Also the number parameters has grown; models often use tens of millions of parameters, VGG-19 as much as 155 million. This translates to a maximum memory usage during training of approximately 200 MB for most models, a little over 800 MB for VGG-19, when trained with a batch size of one. This then increases to above 1000 MB for several top-performing models once the batch is increased to 16, and increases approximately linearly with batch size beyond that \cite{DBLP:journals/corr/CanzianiPC16}.
 	
-	\section{Regeneration of weights}
-	We realize that an arbitrary number of non-trainable weights can be represented by a (single) seed. A Pseudo Random Number Generator (PRNG) can generate values that are "hard to distinguish" from independent realizations of a certain distribution. They typically work sequentially, or multiple seeds are used between threads if the values should be generated in a reproducible manner.
+	This means that with a batch size of 64, none of the top performing models can be trained on a mobile device or a consumer-grade GPU because of memory limitations. When we consider memory limited mobile devices, even model evaluation is challenging. In that case, the vast majority of memory is required for the trained weights (as activations don't need to be remembered). With memory scheduling, memory requirements can be reduced greatly, but at a run-time cost \cite{Li_Shen_Dou_Ni_Xu_Yang_Wang_Niu_2019} presumably due to memory bandwidth and latency limitations.
 	
-	These methods are sufficient to save on model storage costs for large models. A more realistic problem is memory usage during training, as was made clear in section \ref{performance_depth_memory}. The memory usage typically peaks at the end of the forward pass, when the model weights and the activations are stored. Recomputation of activations during the backward pass, by only saving a subset of the computed activations and recomputing them from the last layer they are known from, has allowed for sub-linear maximum memory usage in the number of layers during training \cite{chen2016training}.
+	\section{Recomputation}\label{recomputation}
+	We realize that an arbitrary number of non-trainable parameters can be represented by a (single) seed. A Pseudo Random Number Generator (PRNG) can generate values that are "hard to distinguish" from independent realizations of a certain distribution. They typically work sequentially, or multiple seeds are used between threads if the values should be generated in a reproducible manner. These methods are sufficient to save on model storage costs for large models.
 	
-	While one typically recomputes a majority of the activations with the algorithm in \cite{chen2016training}, the runtime increase is shown to be only 30\% for a 4x reduction in maximum memory usage when training an LSTM under a long sequence unrolling setting. It is hypothesized that this can be explained in part by the under utilization of computational resources in a GPU, where memory bandwidth is more often a limiting factor\footnote{We found no scientific research on this (engineering) subject, but plenty of anecdotal evidence in blog posts such as these: \url{https://nestlogic.com/index.php/2019/02/11/gpu-utilization-with-neural-networks/} and  \url{https://towardsdatascience.com/measuring-actual-gpu-usage-for-deep-learning-training-e2bf3654bcfd}} (a simple solution would be to increase the batch size, but this directly increases the maximum memory usage, see again section \ref{performance_depth_memory}).
+	A more realistic problem is memory usage during training, as was made clear in section \ref{introduction}. The memory usage typically peaks at the end of the forward pass, when the model weights and the activations are stored. Recomputation of activations during the backward pass, by only saving a subset of the computed activations and recomputing them from the last layer they are known from, allows for sub-linear maximum memory usage in the number of layers during training \cite{chen2016training}. See \cite{DBLP:journals/corr/GruslysMDLG16} for an algorithm specialized for recurrent models.
 	
-	All of this changes when instead, we utilize a Pseudo Random Function (PRF). These can be viewed as PRNG's which don't generate values $(v_1, v_2, \ldots)$ in sequence, but instead can evaluate in constant time a function $\mathds{N} \ni n \mapsto v_n$. They stem from cryptography and the well-known ones are made for such applications, unsuitable for training neural networks. The requirements for a random number generator are different for this application: speed and memory usage matter, while the quality of the generated numbers less. For a sketch of a first idea of a pseudo random function for this application, see the appendix. The memory requirements of such a function are low enough to evaluate it on-chip (A TitanX GPU has approximately 1KB of memory for a thread \cite{DBLP:conf/icml/DiamosSCCCEEHS16}), without any communication across cores. In this way, there is no memory access incurred for non-trainable weights, which we think will be reflected favorably in the training time of these models.
+	While one typically recomputes a majority of the activations with the algorithm in \cite{chen2016training}, the runtime increase is shown to be only 30\% for a 4x reduction in maximum memory usage when training an LSTM under a long sequence unrolling setting. It is hypothesized that this can be explained in part by the under utilization of computational resources in a GPU, where memory bandwidth is often a limiting factor\footnote{We found no scientific research on this (engineering) subject, but plenty of anecdotal evidence in blog posts such as these: \url{https://nestlogic.com/index.php/2019/02/11/gpu-utilization-with-neural-networks/} and  \url{https://towardsdatascience.com/measuring-actual-gpu-usage-for-deep-learning-training-e2bf3654bcfd}} (a simple improvement would be to increase the batch size, but this directly increases the maximum memory usage as explained in section \ref{introduction}).
 	
+	All of this changes when instead, we utilize a Pseudo Random Function (PRF) \cite{Goldreich_Goldwasser_Micali_1986}. These can be viewed as PRNG's which don't generate values $(v_1, v_2, \ldots)$ in sequence, but instead can evaluate in constant time a function $\mathds{N} \ni n \mapsto v_n$. They stem from cryptography and the well-known ones are made for such applications, unsuitable for training neural networks. The requirements for a pseudo random function are different for this application: speed and memory usage matter, while the quality of the generated numbers less. For a sketch of a first idea of a pseudo random function for this application, see the appendix. The memory requirements of such a function are low enough to evaluate it using register memory only and without any communication with memory or across cores. In this way, there is no memory access incurred for non-trainable weights, which we think will be reflected favorably in the training time of these models: GPU's can have memory limitations such as the TitanX GPU which has only approximately 1KB of per-thread memory that can be read from fast enough to saturate the floating point datapath \cite{DBLP:conf/icml/DiamosSCCCEEHS16}. 
+	
+	Note that these benefits apply during both training and evaluation.
+	
+	\section{Experiments}
 	The scope and duration of this project didn't allow for an actual implementation of the above idea's. We couldn't actually test many of the aspects mentioned above. It however did provide a motivation to explore how the usage of non-trainable parameters could improve model performance.
 	
-	\section{Models and Methods}
-	We study the effect of introducing new random layers, or replacing existing layers by random layers. We propose idea to store weights of random layer in memory effective way. We do not have the means to provide an implementation of our idea. We measure model performance exactly by simply storing the random layers completely.
+	We attempt to find model architectures that utilize untrainable parameters while performing well. To that end we introduce new random layers, or replacing existing layers by random layers on different baseline architectures. We do not have the means to provide an implementation of our idea, but measure model performance exactly by simply storing the random layers completely. In all our experiments, the number of trainable parameters grows very slowly, or not at all, in comparison to the number of trainable parameters we add.
 	
-	\subsection{Performance}
-	To measure the effect of random layers on performance we identified the following tasks:
+	Some of the tasks we selected while writing our proposal turned out to be too easy to solve (MNIST \cite{lecun-mnist}) or improvements too hard to measure without long evaluation times (Higgs dataset \cite{Dua:2019}), and any improvements therefor hard to measure. We identified the following more difficult tasks:
 	\begin{itemize}
 		\itemsep0em
-		\item Convolutional architecture to classify images from the MNIST fashion dataset
-		\item Dense architecture to classify level of income on the census income dataset
-		\item Dense architecture to do regression on the census income dataset
-		\item Run bayesian optimization to identify best model architecture with possibility of random layers and cap on trainable parameters
+		\item Convolutional architecture to classify images from the MNIST fashion dataset \cite{xiao2017/online}
+		\item Dense architecture to classify level of income on the census income dataset, classifying income \cite{Asuncion+Newman:2007}
+		\item Dense architecture to do regression on the census income dataset, predicting age \cite{Asuncion+Newman:2007}
 	\end{itemize}
-	For MNIST dataset we evaluate 3 dense architectures, 3 convolution architectures with one convolution, max pooling and varying number of dense layers, 3 convolution architectures with added varying number of random layers.
+	For the census income dataset, a label embedding was used.
+	
+	We chose to not work with two model sizes (small and large) for each task as planned, we had trouble to find situations in which adding non-trainable parameters at all and as such did not find suitable baseline models. Different tests turned out to be suitable for different tasks.
+	
+	We then take a slightly different approach, and use Bayesian optimization to find good hyperparameters with a constraint on the number of trainable parameters, as all others could be regenerated as described in section \ref{recomputation}.
+	
+	We use maximum likelihood loss for classification and squared error for regression loss for regression tasks. For all training, the Adam optimizer was used with an early stopping callback. We evaluate using accuracy for classification and squared error for regression.	
 
-	For census income dataset we evaluate dense models without random layer, with 1 random layer and with 2 random layers. Every of this configuration we train with multiple sizes of layers before and after random layer. We also evaluate architecture with residual random layers where we can train one scalar for random layer or one scalar for every node of random layer.
-	
-	In optimization, domain of search is size of random layer, number of random layers, size of end layer, activation function of random layer, activation of last layer and whether use batch norm.	
-	
-	For the training we use Adam optimizer and early stopping callback to stop learning after evaluation loss does not change much.
+	%For MNIST dataset we evaluate 3 dense architectures, 3 convolution architectures with one convolution, max pooling and varying number of dense layers, 3 convolution architectures with added varying number of random layers.
+
+	%We evaluate dense models without random layer, with 1 random layer and with 2 random layers. Every of this configuration we train with multiple sizes of layers before and after random layer. We also evaluate architecture with residual random layers where we can train one scalar for random layer or one scalar for every node of random layer.
+		
+	%In optimization, domain of search is size of random layer, number of random layers, size of end layer, activation function of random layer, activation of last layer and whether use batch norm.
 	
 	\section{Results}
-	On MNIST dataset we data to training and test data set in ratio 8:1. We train every architecture one time. The loss function is sparse categorical crossentropy (higher is better). Best dense configuration had performance 0.89\%, best convolution configuration had 0.91\% and with added random layers best performance was 89\%. In \ref{fig:result1} can be seen plot with data point for every configuration. On plot we see means of every type of architecture. After adding random layers the performance dropped.
+	\subsection*{Task 1: Convolutional architecture for classification}
+	The convolutional models demonstrated stable performance and were not cross validated. For all architectures, we started with 32 trainable convolutions of shape (3, 3) with no strides and ReLU activations, followed by a (2, 2) maxpool with strides of (2, 2) and a flatten. We used at least a trainable dense layer with a softmax activation at the end. The baseline model contains the layers mentioned in this paragraph and nothing else.
 	
-	On Census income we use K-fold evaluation and we split data to 10 parts and every architecture configuration train for 10 times. In regression task loss is mean squared error(lower is better). In \ref{fig:result2} we can see that mean of results is similar even if we add 1 or 2 random layer. We also go deeper with random layers with using residual random layers. We evaluate architectures with 10, 20, 30 and 40 residual random layers. Results are in \ref{fig:result3} and there are not much difference when we add more random layers.
+	We were unable to see any benefit from adding random layers. We did not expect that: in another ETH lecture, attended by one of the team members, it was demonstrated on MNIST that the baseline model with a single trainable layer of size 128 added performs at 98\% accuracy after a single epoch. Setting that extra layer as untrainable lead to an accuracy of 91\%. The implication in that lecture was that random layer was useful although it had no learnable parameters itself. I.e. it is better to learn from a large number of random features of the previous layer, than it is to learn from the previous layer itself. Our experiments however show that this is not true; the model performs equally well or better without the extra random layer added, which was not tested during that lecture.
 	
-	On Census income on classification task we take same models as in regression. We use sparse categorical crossentropy loss. Results are in \ref{fig:result4}. Best models have similar results even after adding random layer, but we can see mean is smaller for architectures without random layer and that is because few models has low performance, so we can see that stability of training went up after adding random layer.	
+	\subsection*{Task 2: Dense architecture for classification}
+	We now use 10-fold CV to be able to assess smaller differences in performance. All architectures consist only of fully connected layers, with random layers in the middle of the network. We do a grid search, varying over different aspects of the architecture (whether there is a trainable layer before the random layers, how many random layers there are and of which size, whether there is a trainable layer after the random layers and before the trainable outputlayer with softmax activation). We notice that there are some configurations in which the model training is unstable without random layer. Then, either the training is successful or not, with the random layer not improving performance in the first case. We were unable to explain why the training stability improved. The scores are visualized in figure \ref{fig:average_classification}.
 	
 	\begin{Figure}
 		\centering
-		\includegraphics[width=\linewidth]{figure1.png}
-		\captionof{figure}{MNIST}
-		\label{fig:result1}
-	\end{Figure}
-
-	\begin{Figure}
-		\centering
-		\includegraphics[width=\linewidth]{figure2.png}
-		\captionof{figure}{Census income regression}
-		\label{fig:result2}
+		\includegraphics[width=\linewidth]{average_classification}
+		\captionof{figure}{Census income dataset classification accuracy: stability improvement.}
+		\label{fig:average_classification}
 	\end{Figure}
 	
 	\begin{Figure}
 		\centering
-		\includegraphics[width=\linewidth]{figure3.png}
-		\captionof{figure}{Census income regression residual layers}
-		\label{fig:result3}
+		\includegraphics[width=\linewidth]{average_regression}
+		\captionof{figure}{Census income dataset regression score: no weights per layer.}
+		\label{fig:average_regression}
 	\end{Figure}
 	
 	\begin{Figure}
 		\centering
-		\includegraphics[width=\linewidth]{figure4.png}
-		\captionof{figure}{Census income classification}
-		\label{fig:result4}
+		\includegraphics[width=\linewidth]{average_regression_residual}
+		\captionof{figure}{Census income dataset regression score: residual network, one weight per layer. Averages split out on whether there is a trainable layer of size 100 at the start.}
+		\label{fig:average_regression_residual}
 	\end{Figure}
+	
+	\begin{Figure}
+		\centering
+		\includegraphics[width=\linewidth]{average_regression_residual_node}
+		\captionof{figure}{Census income dataset regression score: residual network, one weight per node}
+		\label{fig:average_regression_residual_node}
+	\end{Figure}
+	
+	\subsection*{Task 3: Dense architecture for regression}
+	Again we use 10-fold CV, and first the architectures are the same as in Task 2. We trained a random forest for reference, which performs with a loss of .42 before hyperparameter tuning. The results are displayed in figure \ref{fig:average_regression}. For these architectures, the number of trainable parameters stays constant as more random layers are added. We now change our architecture to a residual one, with a single trainable parameter controlling the magnitude of the change per layer. With the number of trainable parameters now growing linearly with the number of layers, performance now doesn't noticably change as we add more layers, as can be seen in figure \ref{fig:average_regression_residual}. We used linear, $\tanh$ and relu activations with similar results. We now modify the last experiment one step further, and use a single trainable parameter not per layer but per node. Each weight controls how much of the random map, applied to the values of the last layer, gets added to each coordinate of our state vector as the data flows through the network. For the first time now, the performance reliably increases (albeit slowly) as more layers get added. See figure \ref{fig:average_regression_residual_node}.
+	
+	\subsection*{Automated hyperparameter optimization}
+	We try to utilize an increased number of non-trainable parameters to increase the performance per trainable parameter. In our experiments, performance increased only with an increase in layers when a certain minimum number of trainable parameters per layer was included in the architecture. That gives rise to the question, whether trainable parameters are best used with, or without non-trainable parameters in the mix. We did an automated hyperparameter search using Bayesian optimization, allowing the algorithm to allocate trainable weights to classical dense layers random layers with few scalars to control their influence.
+	
 	
 	\section{Discussion}
 	From results we can say that adding few random layers does not improve performance. Mean performance of models went a little bit down after adding these layers. Same happen when we add lots of residual random layer. In classification task of census income models without any random layer happened have lower performance in some cases, but after adding random layer we have not see it. From that we conclude that in some cases random layers can improve stability of training.
@@ -118,9 +133,9 @@
 		\item a unique identifier for layer and
 		\item the coordinates of the parameter.
 	\end{enumerate}
-	The resulting bits are then interpreted as a float in $[0, 1]$ to be used as input of the inverse of a cumulative distribution function.
-
-	It goes without saying that we are no experts on such functions; the above is merely a first idea from non-experts.
+	The resulting bits are then interpreted as a float in $[0, 1]$ to be used as input of the inverse of a cumulative distribution function. We think it is possible to evaluate such a function in just a handful of cycles.
+	
+	It goes without saying that we are no experts on such functions; the above is merely a first idea from non-experts. For more idea's in this 'hash function direction', see for example \cite{TAOCP364} or \cite{wiki:Hash_function}.
 
 	\bibliography{../bibliography}
 	\bibliographystyle{plain}
