@@ -125,7 +125,7 @@
 	We attempted to improve on the memory / performance / time trade-off by utilizing non-trainable parameters to improve architectures with few trainable parameters. While there are a lot of (engineering) reasons to believe that enormous models could be trained and evaluated with very little memory and a "better than naively expected" time penalty, these architectures didn't outperform architectures with no or few non-trainable parameters in our experiments.
 	
 	\appendix
-	\section*{Appendix: Possible pseudo random function for neural networks}
+	\section{Possible pseudo random function for neural networks}
 	We choose a simple hash function $h$, to be evaluated on a tuple of
 	\begin{enumerate}
 		\itemsep0em
@@ -135,6 +135,9 @@
 	The resulting bits are then interpreted as a float in $[0, 1]$ to be used as input of the inverse of a cumulative distribution function.
 	
 	The above is merely a first idea from non-experts. For more idea's in this 'hash function direction', see for example \cite{TAOCP364} or \cite{wiki:Hash_function}.
+	
+	\section{Source code and all experiments}
+	These can be found here\footnote{\url{https://polybox.ethz.ch/index.php/s/axjB5NJHQOzeWSB}}.
 
 	\bibliography{../bibliography}
 	\bibliographystyle{plain}
